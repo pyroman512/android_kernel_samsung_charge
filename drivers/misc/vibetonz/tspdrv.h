@@ -42,7 +42,7 @@
 #define SPI_HEADER_SIZE                     3   /* DO NOT CHANGE - SPI buffer header size */
 #define VIBE_OUTPUT_SAMPLE_SIZE             50  /* DO NOT CHANGE - maximum number of samples */
 
-//#define VIBE_TUNING
+#define VIBE_TUNING
 
 /* Type definitions */
 #ifdef __KERNEL__
