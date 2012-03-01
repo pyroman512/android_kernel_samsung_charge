@@ -9,11 +9,7 @@ cp arch/arm/boot/zImage ../../../device/samsung/charge/kernel
 
 for M in `find . -name *.ko`
 do
-  if [ `basename "$M"` == "bcm4329.ko" ]; then
-    cp "$M" ../../../device/samsung/charge
-  else
-    cp "$M" ../../../device/samsung/charge/modules
-  fi
+  cp "$M" ../../../device/samsung/charge/modules
 done
 
 
