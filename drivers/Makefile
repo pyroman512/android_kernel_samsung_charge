@@ -119,7 +119,7 @@ ifeq ($(CONFIG_MACH_CHIEF),y)
 obj-$(CONFIG_LTESPI)		+= ltespi/
 else
 obj-$(CONFIG_SAMSUNG_PHONE_TTY) += cdma_dpram/
-obj-m				+= wtlfota_dpram/
+#obj-m				+= wtlfota_dpram/
 obj-$(CONFIG_LTESPI)		+= ltespi/
 endif
 

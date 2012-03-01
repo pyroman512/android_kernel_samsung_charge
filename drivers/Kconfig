@@ -120,6 +120,6 @@ source "drivers/tfsr/Kconfig"
 
 source "drivers/cdma_dpram/Kconfig"
 
-source "drivers/wtlfota_dpram/Kconfig"
+#source "drivers/wtlfota_dpram/Kconfig"
 
 endmenu
