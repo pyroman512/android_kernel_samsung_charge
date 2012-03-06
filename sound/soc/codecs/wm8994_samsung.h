@@ -174,7 +174,8 @@ Codec Output Path BIT
  */
 enum audio_path	{
 	OFF, RCV, SPK, HP, HP_NO_MIC, BT, SPK_HP,
-	EXTRA_DOCK_SPEAKER
+	EXTRA_DOCK_SPEAKER, RING_SPK, RING_HP,
+	RING_NO_MIC, RING_SPK_HP
 };
 
 enum mic_path			{MAIN, MAIN2, SUB, BT_REC, MIC_OFF};
@@ -183,6 +184,7 @@ enum fmradio_mix_path		{FMR_MIX_OFF, FMR_MIX_DUAL};
 enum power_state		{CODEC_OFF, CODEC_ON };
 enum input_source_state		{DEFAULT_INPUT, RECOGNITION, CAMCORDER, VOIP_INPUT};
 enum output_source_state	{DEFAULT_OUTPUT, RING_TONE, VOIP_OUTPUT};
+enum ringtone_state		{RING_OFF, RING_ON};
 enum vtcall_state		{VT_OFF, VT_ON};
 enum regc_state			{RECG_OFF, RECG_ON};
 #ifdef CONFIG_SND_SOC_A1026
@@ -225,6 +227,7 @@ struct wm8994_priv {
 	enum power_state power_state;
 	enum input_source_state input_source;
 	enum output_source_state output_source;
+	enum ringtone_state ringtone_active;
 	select_route *universal_playback_path;
 	select_route *universal_voicecall_path;
 	select_mic_route *universal_mic_path;

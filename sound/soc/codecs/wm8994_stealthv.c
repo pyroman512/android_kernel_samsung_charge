@@ -1217,7 +1217,7 @@ void wm8994_set_playback_headset(struct snd_soc_codec *codec)
 	if (!wm8994->testmode_config_flag) {
 		val = wm8994_read(codec, WM8994_LEFT_OUTPUT_VOLUME);
 		val &= ~(WM8994_HPOUT1L_MUTE_N_MASK | WM8994_HPOUT1L_VOL_MASK);
-		if (wm8994->output_source == RING_TONE)
+		if (wm8994->ringtone_active == RING_TONE)
 			val |= (WM8994_HPOUT1_VU | WM8994_HPOUT1L_MUTE_N | 
 						TUNING_RING_OUTPUTL_VOL);
 		else
@@ -1228,7 +1228,7 @@ void wm8994_set_playback_headset(struct snd_soc_codec *codec)
 
 		val = wm8994_read(codec, WM8994_RIGHT_OUTPUT_VOLUME);
 		val &= ~(WM8994_HPOUT1R_MUTE_N_MASK | WM8994_HPOUT1R_VOL_MASK);
-		if (wm8994->output_source == RING_TONE)
+		if (wm8994->ringtone_active == RING_TONE)
 			val |= (WM8994_HPOUT1_VU | WM8994_HPOUT1R_MUTE_N | 
 						TUNING_RING_OUTPUTR_VOL);
 		else
@@ -1239,7 +1239,7 @@ void wm8994_set_playback_headset(struct snd_soc_codec *codec)
 
 		val = wm8994_read(codec, WM8994_LEFT_OPGA_VOLUME);
 		val &= ~(WM8994_MIXOUTL_MUTE_N_MASK | WM8994_MIXOUTL_VOL_MASK);
-		if (wm8994->output_source == RING_TONE)
+		if (wm8994->ringtone_active == RING_TONE)
 			val |= (WM8994_MIXOUT_VU | WM8994_MIXOUTL_MUTE_N | 
 							TUNING_RING_OPGAL_VOL);
 		else
@@ -1249,7 +1249,7 @@ void wm8994_set_playback_headset(struct snd_soc_codec *codec)
 
 		val = wm8994_read(codec, WM8994_RIGHT_OPGA_VOLUME);
 		val &= ~(WM8994_MIXOUTR_MUTE_N_MASK | WM8994_MIXOUTR_VOL_MASK);
-		if (wm8994->output_source == RING_TONE)
+		if (wm8994->ringtone_active == RING_TONE)
 			val |= (WM8994_MIXOUT_VU | WM8994_MIXOUTR_MUTE_N | 
 							TUNING_RING_OPGAR_VOL);
 		else
@@ -1404,7 +1404,7 @@ void wm8994_set_playback_speaker(struct snd_soc_codec *codec)
 
 		val = wm8994_read(codec, WM8994_SPEAKER_VOLUME_LEFT);
 		val &= ~(WM8994_SPKOUTL_MUTE_N_MASK | WM8994_SPKOUTL_VOL_MASK);
-		if (wm8994->output_source == RING_TONE)
+		if (wm8994->ringtone_active == RING_TONE)
 			val |= (WM8994_SPKOUT_VU | WM8994_SPKOUTL_MUTE_N | 
 							TUNING_RING_SPKL_VOL);
 		else
@@ -1418,7 +1418,7 @@ void wm8994_set_playback_speaker(struct snd_soc_codec *codec)
 
 		val = wm8994_read(codec, WM8994_CLASSD);
 		val &= ~(WM8994_SPKOUTL_BOOST_MASK);
-		if (wm8994->output_source == RING_TONE)
+		if (wm8994->ringtone_active == RING_TONE)
 			val |= TUNING_RING_CLASSD_VOL << 
 						WM8994_SPKOUTL_BOOST_SHIFT;
 		else
@@ -1533,7 +1533,7 @@ void wm8994_set_playback_speaker_headset(struct snd_soc_codec *codec)
 	if (!wm8994->testmode_config_flag) {
 		val = wm8994_read(codec, WM8994_SPEAKER_VOLUME_LEFT);
 		val &= ~(WM8994_SPKOUTL_MUTE_N_MASK | WM8994_SPKOUTL_VOL_MASK);
-		if (wm8994->output_source == RING_TONE)
+		if (wm8994->ringtone_active == RING_TONE)
 			val |= (WM8994_SPKOUT_VU | WM8994_SPKOUTL_MUTE_N | 
 							TUNING_RING_SPKL_VOL);
 		else
@@ -1547,7 +1547,7 @@ void wm8994_set_playback_speaker_headset(struct snd_soc_codec *codec)
 
 		val = wm8994_read(codec, WM8994_CLASSD);
 		val &= ~(WM8994_SPKOUTL_BOOST_MASK);
-		if (wm8994->output_source == RING_TONE)
+		if (wm8994->ringtone_active == RING_TONE)
 			val |= TUNING_RING_CLASSD_VOL << 
 						WM8994_SPKOUTL_BOOST_SHIFT;
 		else
@@ -1594,7 +1594,7 @@ void wm8994_set_playback_speaker_headset(struct snd_soc_codec *codec)
 	if (!wm8994->testmode_config_flag) {
 		val = wm8994_read(codec, WM8994_LEFT_OUTPUT_VOLUME);
 		val &= ~(WM8994_HPOUT1L_MUTE_N_MASK | WM8994_HPOUT1L_VOL_MASK);
-		if (wm8994->output_source == RING_TONE)
+		if (wm8994->ringtone_active == RING_TONE)
 			val |= (WM8994_HPOUT1_VU | WM8994_HPOUT1L_MUTE_N | 
 						TUNING_RING_DUAL_OUTPUTL_VOL);
 		else
@@ -1604,7 +1604,7 @@ void wm8994_set_playback_speaker_headset(struct snd_soc_codec *codec)
 
 		val = wm8994_read(codec, WM8994_RIGHT_OUTPUT_VOLUME);
 		val &= ~(WM8994_HPOUT1R_MUTE_N_MASK | WM8994_HPOUT1R_VOL_MASK);
-		if (wm8994->output_source == RING_TONE)
+		if (wm8994->ringtone_active == RING_TONE)
 			val |= (WM8994_HPOUT1_VU | WM8994_HPOUT1R_MUTE_N | 
 						TUNING_RING_DUAL_OUTPUTR_VOL);
 		else
