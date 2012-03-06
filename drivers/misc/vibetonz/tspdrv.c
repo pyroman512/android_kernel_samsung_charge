@@ -236,20 +236,18 @@ struct device *immTest_test;
 EXPORT_SYMBOL(immTest_test);
 
 extern long int freq_count;
-unsigned long value;
-char *after;
 static ssize_t immTest_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	printk(KERN_INFO "[VIBETONZ] %s : operate nothing\n", __FUNCTION__);
-	value = simple_strtoul(buf, &after, 10);
-	return sprintf(buf, "%ld\n", value);
-	//return 0;
+
+	return 0;
 }
 static ssize_t immTest_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
 {
+	char *after;
 	unsigned long arg1=0, arg2=0;
 
-	value = simple_strtoul(buf, &after, 10);
+	unsigned long value = simple_strtoul(buf, &after, 10);
 	printk(KERN_INFO "[VIBETONZ] value:%ld\n", value);
 
 	if (value > 0) 
