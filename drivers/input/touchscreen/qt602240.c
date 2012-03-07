@@ -2773,7 +2773,7 @@ void check_chip_calibration(unsigned char one_touch_input_flag)
 		}
 
 		/* print how many channels we counted */
-		printk(KERN_DEBUG"[TSP] Flags Counted channels: t:%d a:%d \n", tch_ch, atch_ch);
+		//printk(KERN_DEBUG"[TSP] Flags Counted channels: t:%d a:%d \n", tch_ch, atch_ch);
 
 		/* send page up command so we can detect when data updates next time,
 		* page byte will sit at 1 until we next send F3 command */
@@ -2949,10 +2949,10 @@ int set_tsp_for_ta_detect(int state)
 	}
 
 	if (state) {
-		printk(KERN_DEBUG "[TSP] TA Detect!!!\n");
+		//printk(KERN_DEBUG "[TSP] TA Detect!!!\n");
 		touch_TA_detect = 1;
 	} else {
-		printk(KERN_DEBUG "[TSP] TA NON-Detect!!!\n");
+		//printk(KERN_DEBUG "[TSP] TA NON-Detect!!!\n");
 		touch_TA_detect = 0;
 	}
 
@@ -3035,7 +3035,7 @@ void TSP_forced_release(void)
 		printk(KERN_DEBUG"[TSP] forced released. [%d] : %d, %d\n",
 			i, fingerInfo[i].x, fingerInfo[i].y);
 #else
-		printk(KERN_DEBUG"[TSP] forced released\n");
+		//printk(KERN_DEBUG"[TSP] forced released\n");
 #endif
     }
 
@@ -3126,7 +3126,7 @@ void  get_message(void)
 	/* Call the main application to handle the message. */
 	//20102017 julia
 	if ((quantum_msg[0] < 2) || (quantum_msg[0] >= 12)) {
-		printk(KERN_DEBUG "[TSP] msg id = %x %x %x %x %x %x %x %x %x\n",\
+		//printk(KERN_DEBUG "[TSP] msg id = %x %x %x %x %x %x %x %x %x\n",\
 			quantum_msg[0], quantum_msg[1], quantum_msg[2], quantum_msg[3], quantum_msg[4],\
 			quantum_msg[5], quantum_msg[6], quantum_msg[7], quantum_msg[8]);
 
@@ -3277,7 +3277,7 @@ void  get_message(void)
 #if DEBUG_LOG_ENABLE /* #ifdef CONFIG_KERNEL_DEBUG_SEC */
 		printk(KERN_DEBUG"[TSP] released. %d : %ld, %ld\n", id, x, y);
 #else
-		printk(KERN_DEBUG"[TSP] released\n");
+		//printk(KERN_DEBUG"[TSP] released\n");
 #endif
 
 	} else if ((quantum_msg[1] & 0x80) && (quantum_msg[1] & 0x40)) {
@@ -3299,7 +3299,7 @@ void  get_message(void)
 #if DEBUG_LOG_ENABLE /* #ifdef CONFIG_KERNEL_DEBUG_SEC */
 			printk(KERN_DEBUG"[TSP] pressed. %d : %ld, %ld\n", id, x, y);
 #else
-			printk(KERN_DEBUG"[TSP] pressed\n");
+			//printk(KERN_DEBUG"[TSP] pressed\n");
 #endif
 
 	} else if ((quantum_msg[1] & 0x80) && (quantum_msg[1] & 0x10)) {
