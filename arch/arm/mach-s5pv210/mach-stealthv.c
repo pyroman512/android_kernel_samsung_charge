@@ -59,9 +59,10 @@
 
 #ifdef CONFIG_ANDROID_PMEM
 #include <linux/android_pmem.h>
+#endif
+
 #include <plat/media.h>
 #include <mach/media.h>
-#endif
 
 #ifdef CONFIG_S5PV210_POWER_DOMAIN
 #include <mach/power-domain.h>
@@ -344,37 +345,23 @@ static struct s3cfb_lcd ld9040 = {
 	},
 };
 
-#if 0
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 (14745 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1 (9900 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 (14745 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 (32768 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 (32768 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMD (4800 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_JPEG (8192 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_PMEM (8192 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_GPU1 (3300 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_ADSP (6144 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_TEXTSTREAM (3000 * SZ_1K)
-#else	// optimized settings, 19th Jan.2011
-
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 (32768 * SZ_1K) // 32MB
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 (32768 * SZ_1K) // 32MB
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 (8688 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1 (9900 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 (8688 * SZ_1K)
+
+#ifdef CONFIG_ANDROID_PMEM
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_PMEM (4052 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_GPU1 (3300 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_ADSP (0 * SZ_1K) // 1500 -> 0
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_JPEG (0 * SZ_1K)	// 5120 => 0
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_TEXTSTREAM (3000 * SZ_1K)
+#endif
+
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_JPEG (8192 * SZ_1K)	// 5120 => 0
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMD (800 * 480 * 4 * \
 					(CONFIG_FB_S3C_NR_BUFFERS + \
 					(CONFIG_FB_S3C_NUM_OVLY_WIN * \
 					CONFIG_FB_S3C_NUM_BUF_OVLY_WIN)))
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_WIFI (256 * SZ_1K)
-
-#endif
 
 static struct s5p_media_device aries_media_devs[] = {
 	[0] = {
@@ -398,13 +385,6 @@ static struct s5p_media_device aries_media_devs[] = {
 		.memsize = S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0,
 		.paddr = 0,
 	},
-	[3] = {
-		.id = S5P_MDEV_FIMC1,
-		.name = "fimc1",
-		.bank = 1,
-		.memsize = S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1,
-		.paddr = 0,
-	},
 	[4] = {
 		.id = S5P_MDEV_FIMC2,
 		.name = "fimc2",
@@ -426,6 +406,7 @@ static struct s5p_media_device aries_media_devs[] = {
 		.memsize = S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMD,
 		.paddr = 0,
 	},
+#ifdef CONFIG_ANDROID_PMEM
 	[7] = {
 		.id = S5P_MDEV_PMEM,
 		.name = "pmem",
@@ -454,13 +435,7 @@ static struct s5p_media_device aries_media_devs[] = {
 		.memsize = S5PV210_VIDEO_SAMSUNG_MEMSIZE_TEXTSTREAM,
 		.paddr = 0,
 	},		
-	[11] = {
-		.id = S5P_MDEV_WIFI,
-		.name = "wifi",
-		.bank = 0,
-		.memsize = S5PV210_VIDEO_SAMSUNG_MEMSIZE_WIFI,
-		.paddr = 0,
-	},		
+#endif
 };
 
 static struct regulator_consumer_supply ldo3_consumer[] = {
