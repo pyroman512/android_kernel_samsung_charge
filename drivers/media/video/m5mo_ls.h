@@ -9,7 +9,7 @@
 #include <linux/types.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-subdev.h>
-#include <media/v4l2-i2c-drv.h>
+//#include <media/v4l2-i2c-drv.h>
 
 #define FEATURE_BACKUP_SETTING_VALUE
 

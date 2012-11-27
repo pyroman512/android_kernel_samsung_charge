@@ -37,7 +37,7 @@
 #define FIMC_PHYBUFS		4
 #define FIMC_OUTBUFS		3
 #define FIMC_INQUEUES		10
-#define FIMC_MAX_CTXS		2
+#define FIMC_MAX_CTXS		1
 #define FIMC_TPID		3
 #define FIMC_CAPBUFS		16
 #define FIMC_ONESHOT_TIMEOUT	200
@@ -65,10 +65,7 @@
 #define FIMC_SCLK		1
 #define FIMC_OVLY_MODE FIMC_OVLY_DMA_AUTO
 
-#define PINGPONG_2ADDR_MODE
-#if defined(PINGPONG_2ADDR_MODE)
 #define FIMC_PINGPONG 2
-#endif
 
 /*
  * ENUMERATIONS
@@ -370,8 +367,6 @@ struct fimc_effect {
 /* fimc controller abstration */
 struct fimc_control {
 	int				id;		/* controller id */
-       int				capture_mode;	
-	int				device_onoff;	/* check flag for current state */
 	char				name[16];
 	atomic_t			in_use;
 	void __iomem			*regs;		/* register i/o */
@@ -477,7 +472,6 @@ extern struct fimc_limit fimc43_limits[FIMC_DEVICES];
 extern struct fimc_limit fimc50_limits[FIMC_DEVICES];
 
 /* general */
-extern void s3c_csis_stop();
 extern void s3c_csis_start(int lanes, int settle, int align,
 					int width, int height,
 					int pixel_format);
@@ -603,6 +597,7 @@ extern int fimc_hwset_enable_irq(struct fimc_control *ctrl,
 extern int fimc_hwset_disable_irq(struct fimc_control *ctrl);
 extern int fimc_hwset_clear_irq(struct fimc_control *ctrl);
 extern int fimc_hwset_reset(struct fimc_control *ctrl);
+extern int fimc_hwset_sw_reset(struct fimc_control *ctrl);
 extern int fimc_hwset_clksrc(struct fimc_control *ctrl, int src_clk);
 extern int fimc_hwget_overflow_state(struct fimc_control *ctrl);
 extern int fimc_hwset_camera_offset(struct fimc_control *ctrl);

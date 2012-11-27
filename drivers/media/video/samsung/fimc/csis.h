@@ -13,7 +13,7 @@
 #ifndef __CSIS_H
 #define __CSIS_H __FILE__
 
-#define S3C_CSIS_NAME		"s3c-csis"
+#define S3C_CSIS_NAME		"s5p-mipi-csis"
 #define S3C_CSIS_NR_LANES	1
 
 #define info(args...)	\
@@ -37,7 +37,6 @@ struct s3c_csis_info {
 	void __iomem	*regs;
 	int		irq;
 	int		nr_lanes;
-	unsigned int initialized;
 };
 
 #endif /* __CSIS_H */

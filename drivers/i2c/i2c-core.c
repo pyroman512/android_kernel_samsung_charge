@@ -1495,6 +1495,47 @@ i2c_new_probed_device(struct i2c_adapter *adap,
 }
 EXPORT_SYMBOL_GPL(i2c_new_probed_device);
 
+struct i2c_client *
+i2c_new_probed_device_new(struct i2c_adapter *adap,
+		      struct i2c_board_info *info,
+		      unsigned short const *addr_list,
+		      int (*probe)(struct i2c_adapter *, unsigned short addr))
+{
+	int i;
+
+	if (!probe)
+		probe = i2c_default_probe;
+
+	for (i = 0; addr_list[i] != I2C_CLIENT_END; i++) {
+		/* Check address validity */
+		if (i2c_check_addr_validity(addr_list[i]) < 0) {
+			dev_warn(&adap->dev, "Invalid 7-bit address "
+				 "0x%02x\n", addr_list[i]);
+			continue;
+		}
+
+		/* Check address availability */
+		if (i2c_check_addr_busy(adap, addr_list[i])) {
+			dev_dbg(&adap->dev, "Address 0x%02x already in "
+				"use, not probing\n", addr_list[i]);
+			continue;
+		}
+
+		/* Test address responsiveness */
+		if (probe(adap, addr_list[i]))
+			break;
+	}
+
+	if (addr_list[i] == I2C_CLIENT_END) {
+		dev_dbg(&adap->dev, "Probing failed, no device found\n");
+		return NULL;
+	}
+
+	info->addr = addr_list[i];
+	return i2c_new_device(adap, info);
+}
+EXPORT_SYMBOL_GPL(i2c_new_probed_device_new);
+
 struct i2c_adapter *i2c_get_adapter(int id)
 {
 	struct i2c_adapter *adapter;

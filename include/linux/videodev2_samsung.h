@@ -656,6 +656,9 @@ enum v4l2_ae_stable_mode
 
 #define V4L2_CID_CAMERA_POWER_CONTROL           (V4L2_CID_PRIVATE_BASE+153)
 
+#define V4L2_CID_CAMERA_RETURN_FOCUS		(V4L2_CID_PRIVATE_BASE + 154)
+//#define V4L2_CID_CAMERA_FINISH_AUTO_FOCUS	(V4L2_CID_PRIVATE_BASE + 155)
+
 /* Pixel format FOURCC depth Description */
 /* 12  Y/CbCr 4:2:0 64x32 macroblocks */
 #define V4L2_PIX_FMT_NV12T    v4l2_fourcc('T', 'V', '1', '2')

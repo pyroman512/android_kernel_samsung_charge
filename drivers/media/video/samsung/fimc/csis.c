@@ -213,15 +213,12 @@ static void s3c_csis_set_hs_settle(int settle)
 void s3c_csis_start(int lanes, int settle, int align, int width,
 		int height, int pixel_format)
 {
+	struct platform_device *pdev = to_platform_device(s3c_csis->dev);
 	struct s3c_platform_csis *pdata;
-
-	if (s3c_csis->initialized)
-		return;
-
 
 	pdata = to_csis_plat(s3c_csis->dev);
 	if (pdata->cfg_phy_global)
-		pdata->cfg_phy_global(1);
+		pdata->cfg_phy_global(pdev, 1);
 
 	s3c_csis_reset();
 	s3c_csis_set_nr_lanes(lanes);
@@ -243,27 +240,20 @@ void s3c_csis_start(int lanes, int settle, int align, int width,
 	s3c_csis_system_on();
 	s3c_csis_phy_on();
 
-	s3c_csis->initialized = 1;
-
 	info("Samsung MIPI-CSI2 operation started\n");
 }
 
-void s3c_csis_stop()
+static void s3c_csis_stop(struct platform_device *pdev)
 {
 	struct s3c_platform_csis *plat;
-
-	if (!s3c_csis->initialized)
-		return;
 
 	s3c_csis_disable_interrupt();
 	s3c_csis_system_off();
 	s3c_csis_phy_off();
 
-	plat = to_csis_plat(s3c_csis->dev);
+	plat = to_csis_plat(&pdev->dev);
 	if (plat->cfg_phy_global)
-		plat->cfg_phy_global(0);
-
-	s3c_csis->initialized = 0;
+		plat->cfg_phy_global(pdev, 0);
 }
 
 static irqreturn_t s3c_csis_irq(int irq, void *dev_id)
@@ -382,8 +372,6 @@ static int s3c_csis_probe(struct platform_device *pdev)
 		s3c_csis->name, s3c_csis))
 		err("request_irq failed\n");
 
-	s3c_csis->initialized = 0;
-
 	info("Samsung MIPI-CSI2 driver probed successfully\n");
 
 	return 0;
@@ -417,7 +405,7 @@ static struct platform_driver s3c_csis_driver = {
 	.suspend	= s3c_csis_suspend,
 	.resume		= s3c_csis_resume,
 	.driver		= {
-		.name	= "s3c-csis",
+		.name	= "s5p-mipi-csis",
 		.owner	= THIS_MODULE,
 	},
 };

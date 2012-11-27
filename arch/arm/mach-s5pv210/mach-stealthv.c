@@ -358,10 +358,11 @@ static struct s3cfb_lcd ld9040 = {
 #endif
 
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_JPEG (8192 * SZ_1K)	// 5120 => 0
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMD (800 * 480 * 4 * \
-					(CONFIG_FB_S3C_NR_BUFFERS + \
-					(CONFIG_FB_S3C_NUM_OVLY_WIN * \
-					CONFIG_FB_S3C_NUM_BUF_OVLY_WIN)))
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMD (800 * \
+					     480 * 4 * \
+					     (CONFIG_FB_S3C_NR_BUFFERS + \
+						 (CONFIG_FB_S3C_NUM_OVLY_WIN * \
+						  CONFIG_FB_S3C_NUM_BUF_OVLY_WIN)))
 
 static struct s5p_media_device aries_media_devs[] = {
 	[0] = {

@@ -22,7 +22,7 @@
 
 #include <media/v4l2-device.h>
 #include <media/v4l2-subdev.h>
-#include <media/v4l2-i2c-drv.h>
+//#include <media/v4l2-i2c-drv.h>
 #include <media/m5mo_ls_platform.h>
 
 #ifdef CONFIG_VIDEO_SAMSUNG_V4L2
@@ -515,6 +515,7 @@ m5moLS_read_category_parm(struct i2c_client *client,
 	if (data_length != M5MO_LS_8BIT && data_length != M5MO_LS_16BIT	&& data_length != M5MO_LS_32BIT)		
 		return -EINVAL;
 
+
 read_again:
 	msg->addr = client->addr;
 	msg->flags = 0;
@@ -926,6 +927,7 @@ static int m5moLS_power_on(struct v4l2_subdev *sd)
         gpio_set_value(GPIO_CAM_MEGA_nRST, 1);
 
 
+
         gpio_free(GPIO_CAM_MEGA_nRST);
         gpio_free(GPIO_CAM_VT_EN_28V);
         gpio_free(GPIO_CAM_VT_RST_28V); 
@@ -1070,6 +1072,7 @@ static int m5moLS_power_off(struct v4l2_subdev *sd)
 }
 
 
+
 /** 
  * m5moLS_power_en: Enable or disable the camera sensor power 
  * Use only for updating camera firmware
@@ -1086,6 +1089,8 @@ static int m5moLS_power_en(struct v4l2_subdev *sd,int onoff)
         }
         return 0;
 }
+
+
 
 
 #endif //ifdef M5MO_LS_CAM_POWER
@@ -1151,6 +1156,7 @@ m5moLS_set_mode_common(struct v4l2_subdev *sd, u32 mode )
 
 	return err;
 }
+
 
 
 static int 
@@ -1251,6 +1257,7 @@ m5moLS_get_version_in_flash(struct v4l2_subdev *sd)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 
+
 	int i, j, flash_addr, err = 0;
 	u8 readdata[40];
 	u8 pin1 = 0x7E;
@@ -1276,6 +1283,7 @@ m5moLS_get_version(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
     struct i2c_client *client = v4l2_get_subdevdata(sd);
     struct m5moLS_state *state = to_state(sd);
+
 
     u8 err = 0, temp_8=0,i=0,temp_af=0;
     u16 temp_16=0;
@@ -1427,6 +1435,7 @@ static int m5moLS_dump_fw(struct v4l2_subdev *sd)
 	return 0;
 }
 
+
 static int m5moLS_get_capture_size(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
 	ctrl->value = main_jpeg_size;
@@ -1438,6 +1447,7 @@ static int m5moLS_get_thumb_size(struct v4l2_subdev *sd, struct v4l2_control *ct
 	ctrl->value = thumb_jpeg_size;
 	return 0;
 }
+
 
 
 static int m5moLS_set_preview_resolution(struct v4l2_subdev *sd)
@@ -1593,6 +1603,7 @@ static int m5moLS_set_anti_banding(struct v4l2_subdev *sd)
                 break;
 	}
 
+
 	if(err < 0){
 		dev_err(&client->dev, "%s: failed: i2c_write for anti_banding\n", __func__);
 		return -EIO;
@@ -1614,6 +1625,7 @@ static int m5moLS_set_dzoom(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
     int err = -1,zoom_level=0;
     struct i2c_client *client = v4l2_get_subdevdata(sd);
     struct m5moLS_state *state = to_state(sd);
+
 
     zoom_level = ctrl->value;
 	m5moLS_msg(&client->dev, "%s: Enter : Digital Zoom = %d\n", __func__, zoom_level);
@@ -1675,6 +1687,7 @@ static int m5moLS_set_dtp(struct v4l2_subdev *sd)
 static int m5moLS_set_dtp_stop(struct v4l2_subdev *sd)
 {
     struct i2c_client *client = v4l2_get_subdevdata(sd);
+
 
 	/* MON_SIZE(QVGA size) */
 	m5moLS_write_category_parm(client, M5MO_LS_8BIT, 0x0D, 0x1B, 0x00);
@@ -1738,6 +1751,7 @@ static int m5moLS_set_preview_start(struct v4l2_subdev *sd)
             return -EINVAL;
 
 
+
         /* Wait 'YUV-Output' interrupt */
         m5moLS_msg(&client->dev,"Waiting 'YUV-Output' interrupt... \n");
         rval = m5moLS_wait_interrupt(sd, M5MO_LS_INT_MODE, 2000);
@@ -1784,10 +1798,12 @@ static int m5moLS_set_capture_resolution(struct v4l2_subdev *sd)
             postview_resolution = 0x0B;            
             break;
 
+
         case M5MO_LS_CAPTURE_W4MP: // 2560 x 1536
             capture_resolution = M5MO_LS_SHOT_2560_1536;
             postview_resolution = 0x0C;            
             break;
+
 
         case M5MO_LS_CAPTURE_5MP:// 2560 x 1920
             capture_resolution = M5MO_LS_SHOT_2560_1920;
@@ -1999,6 +2015,7 @@ static int m5moLS_convert_iso(struct v4l2_subdev *sd, int value)
     }
     m5moLS_msg(&client->dev,"%s::: value = %d\n",__func__,ret_val);
 
+
     if(ret_val == 0)
         return value;
     else
@@ -2038,6 +2055,7 @@ static int m5moLS_read_exif_info(struct v4l2_subdev *sd)
 	state->exif_info.info_av_numer = val;
 	
 	m5moLS_msg(&client->dev, "%s: av_numer is (%d)\n", __func__, val);
+
 
 	m5moLS_read_category_parm(client, M5MO_LS_32BIT, 0x07, 0x14, &val);
 	state->exif_info.info_av_denumer = val;
@@ -2252,6 +2270,7 @@ static int m5moLS_set_capture_start(struct v4l2_subdev *sd, struct v4l2_control 
 
 static int m5moLS_get_focus_mode(struct i2c_client *client, struct v4l2_control *ctrl)
 
+
 {
     int err = -1,count;
     u32 val = 0;
@@ -2324,6 +2343,7 @@ m5moLS_set_flash_capture(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
             m5moLS_write_category_parm(client, M5MO_LS_8BIT, 0x0B, 0x40, 0x03);
             m5moLS_write_category_parm(client, M5MO_LS_8BIT, 0x0B, 0x41, 0x00);
             break;           
+
 
         case FLASH_MODE_BACKLIGHT_ON:
             m5moLS_msg(&client->dev,"Flash Backlight On is set\n");
@@ -2402,6 +2422,7 @@ static int m5moLS_set_effect_gamma(struct v4l2_subdev *sd, struct v4l2_control *
 }
 
 
+
 static int m5moLS_set_effect_color(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
@@ -2467,6 +2488,7 @@ static int m5moLS_set_effect_color(struct v4l2_subdev *sd, struct v4l2_control *
 }
 
 
+
 static int m5moLS_set_effect(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
 	int err = -1;
@@ -2515,6 +2537,7 @@ static int m5moLS_set_saturation(struct v4l2_subdev *sd, struct v4l2_control *ct
 		return err;
 	}
 
+
 	switch(ctrl->value)
 	{
 		case SATURATION_MINUS_2:
@@ -2541,6 +2564,7 @@ static int m5moLS_set_saturation(struct v4l2_subdev *sd, struct v4l2_control *ct
 			m5moLS_msg(&client->dev,,"%s : Invalid value is ordered!!\n", __func__);
             err = -EINVAL;
     		break;
+
 
 	}
        
@@ -2585,6 +2609,7 @@ static int m5moLS_set_contrast(struct v4l2_subdev *sd, struct v4l2_control *ctrl
     
     return err;
 }
+
 
 
 static int m5moLS_set_sharpness(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
@@ -2660,6 +2685,7 @@ static int m5moLS_set_wdr(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 }
 
 
+
 static int m5moLS_set_anti_shake(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
     int err = -1;
@@ -2729,6 +2755,7 @@ static int m5moLS_set_face_detection(struct v4l2_subdev *sd, struct v4l2_control
     struct i2c_client *client = v4l2_get_subdevdata(sd);
     struct m5moLS_state *state = to_state(sd);
 
+
     switch(ctrl->value)
     {
         case FACE_DETECTION_OFF:
@@ -2796,6 +2823,7 @@ static int m5moLS_set_touch_auto_focus(struct v4l2_subdev *sd, struct v4l2_contr
 static int m5moLS_set_focus_mode(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
     int err = -1, af_status = 0;
+
 
     struct m5moLS_state *state = to_state(sd);
     struct i2c_client *client = v4l2_get_subdevdata(sd); 
@@ -3058,6 +3086,7 @@ static int m5moLS_set_ev(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 }
 
 
+
 static int m5moLS_set_metering(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
     int err = -1;
@@ -3103,6 +3132,7 @@ static int m5moLS_set_iso(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 	int err = -1;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
        struct m5moLS_state *state = to_state(sd);
+
 
 	m5moLS_msg(&client->dev, "%s: Enter : iso %d\n", __func__, ctrl->value);
        
@@ -3159,6 +3189,7 @@ static int m5moLS_set_gamma(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 	/*[5b] Need to do later*/
 	return 0;
 }
+
 
 static int m5moLS_set_slow_ae(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
@@ -3218,6 +3249,7 @@ static void m5moLS_stop_auto_focus(struct v4l2_subdev *sd)
     struct i2c_client *client = v4l2_get_subdevdata(sd);
     struct m5moLS_state *state = to_state(sd);
 
+
     int orgmode = 0, af_status = 0, intr_value=0;
     af_status = state->userset.lens.af_status;
 
@@ -3245,6 +3277,7 @@ static int m5moLS_get_auto_focus_status(struct v4l2_subdev *sd, struct v4l2_cont
     u32 count = 0;
 
     m5moLS_msg(&client->dev,"%s",__func__);
+
 
     for(count = 0; count<600;count++){
         
@@ -3300,6 +3333,7 @@ static int m5moLS_get_auto_focus_status(struct v4l2_subdev *sd, struct v4l2_cont
 
     return ctrl->value;
 }
+
 
 
 static void m5moLS_init_parameters(struct v4l2_subdev *sd)
@@ -3529,6 +3563,7 @@ static int m5moLS_s_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
 		state->oprmode = M5MO_LS_OPRMODE_VIDEO; 
 
 
+
 	framesize_index = m5moLS_get_framesize_index(sd);
 
        if(framesize_index < M5MO_LS_PREVIEW_QCIF || framesize_index >  M5MO_LS_CAPTURE_8MP)
@@ -3688,6 +3723,7 @@ static int m5moLS_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *param)
 		param->parm.capture.timeperframe.denominator = fps;
 	
 		state->fps = fps;
+
 
               err = m5moLS_set_mode(sd, M5MO_LS_PARMSET_MODE);
               if(err){
@@ -3940,9 +3976,11 @@ static int m5moLS_set_movie_mode(struct v4l2_subdev *sd, struct v4l2_control *ct
 }
 
 
+
 static int m5moLS_set_mcc_mode(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
 	int err = -1;
+
 
 	struct i2c_client *client = v4l2_get_subdevdata(sd); 
        struct m5moLS_state *state = to_state(sd);
@@ -3959,8 +3997,11 @@ static int m5moLS_set_mcc_mode(struct v4l2_subdev *sd, struct v4l2_control *ctrl
        
 	m5moLS_msg(&client->dev,"%s: err = %d\n", __func__, err);
 
+
 	return err;  
 }
+
+
 
 
 
@@ -4046,6 +4087,7 @@ static int m5moLS_g_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
     		//ctrl->value = state->ot_status;
     		err = 0;
     		break;
+
 
     	case V4L2_CID_CAMERA_SMART_AUTO_STATUS:
     		//err = m5moLS_get_smart_auto_status(sd, ctrl);
@@ -4151,7 +4193,7 @@ static int m5moLS_g_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 			ctrl->value = state->exif_info.info_ebv_denumer; 
 			err = 0;		
 			break;	
-
+		
     	default:
             m5moLS_msg(&client->dev, "%s: no such control:::: g_ctrl:id(%d)\n", __func__, (ctrl->id - offset));
 			err = 0;
@@ -4167,8 +4209,9 @@ static int m5moLS_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
     struct i2c_client *client = v4l2_get_subdevdata(sd);
     struct m5moLS_state *state = to_state(sd);
     int err = -ENOIOCTLCMD;
-    int offset = V4L2_CID_PRIVATE_BASE;
-
+    //int offset = V4L2_CID_PRIVATE_BASE;
+	int offset = 134217728;
+	
     m5moLS_msg(&client->dev, "%s :::: ctrl->id=%d, ctrl->value = %d \n", __func__,(ctrl->id - offset),ctrl->value);
 
     switch (ctrl->id) {
@@ -4366,7 +4409,17 @@ static int m5moLS_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
         case V4L2_CID_CAMERA_AE_AWB_LOCKUNLOCK:
             err = m5moLS_set_ae_awb_lock(sd,ctrl);
             break;
-            
+			
+		case V4L2_CID_CAMERA_SET_GAMMA:
+			state->hd_gamma = ctrl->value;
+			err = 0;
+			break;
+		
+		case V4L2_CID_CAMERA_SET_SLOW_AE:
+			state->hd_slow_ae = ctrl->value;
+			err = 0;
+			break;
+           
         default:
             dev_err(&client->dev, "%s: no such control:::: s_ctrl:id(%d)\n", __func__, (ctrl->id - offset));
             err = 0; //SecFeature.Camera aswoogi
@@ -4628,6 +4681,7 @@ m5moLS_i2c_dump_firmware(struct v4l2_subdev *sd)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 
+
 	int i, j, flash_addr, err = 0;
 	u8* readdata;
 	u8 pin1 = 0x7E;
@@ -4699,6 +4753,7 @@ DUMP_ERR:
 	return err;
 
 }
+
 
 
 static int
@@ -4939,7 +4994,7 @@ static int m5moLS_init(struct v4l2_subdev *sd, u32 val)
  * it is not necessary to be initialized on probe time. except for version checking
  * NOTE: version checking is optional
  */
-static int m5moLS_s_config(struct v4l2_subdev *sd, int irq, void *platform_data)
+/*static int m5moLS_s_config(struct v4l2_subdev *sd, int irq, void *platform_data)
 {
     struct i2c_client *client = v4l2_get_subdevdata(sd);
     struct m5moLS_state *state = to_state(sd);
@@ -4948,19 +5003,20 @@ static int m5moLS_s_config(struct v4l2_subdev *sd, int irq, void *platform_data)
 
     m5moLS_msg(&client->dev, "%s\n", __func__);
 
+
     pdata = client->dev.platform_data;
 
     if (!pdata) {
         m5moLS_info(&client->dev, "%s: no platform data\n", __func__);
         return -ENODEV;
     }
-
+*/
     /*
     * Assign default format and resolution
     * Use configured default information in platform data
     * or without them, use default information in driver
     */
-    if (pdata->default_width && pdata->default_height) {
+ /*   if (pdata->default_width && pdata->default_height) {
         state->pix.width = pdata->default_width;
         state->pix.height = pdata->default_height;
     }
@@ -4971,15 +5027,15 @@ static int m5moLS_s_config(struct v4l2_subdev *sd, int irq, void *platform_data)
         state->pix.pixelformat = pdata->pixelformat;
 
     if (!pdata->freq)
-        state->freq = DEFUALT_MCLK;	/* 24MHz default */
-    else
+        state->freq = DEFUALT_MCLK;	*//* 24MHz default */
+ /*   else
         state->freq = pdata->freq;
 
     ret = m5moLS_enable_interrupt_pin(sd);
 
 
-    /* Check for interrupt pin assignment */
-    ret = request_irq(IRQ_M5MO_LS_CAM_MEGA_INT, m5moLS_irq_handler,IRQF_IRQPOLL,"m5moLS irq",NULL);
+*/    /* Check for interrupt pin assignment */
+ /*   ret = request_irq(IRQ_M5MO_LS_CAM_MEGA_INT, m5moLS_irq_handler,IRQF_IRQPOLL,"m5moLS irq",NULL);
     if (ret) {
     	m5moLS_msg(&client->dev,"Failed to get IRQ\n");
     	return ret;
@@ -4992,11 +5048,11 @@ static int m5moLS_s_config(struct v4l2_subdev *sd, int irq, void *platform_data)
     }
 
     return 0;
-}
+}*/
 
 static const struct v4l2_subdev_core_ops m5moLS_core_ops = {
 	.init = m5moLS_init,	/* initializing API */
-	.s_config = m5moLS_s_config,	/* Fetch platform data */
+	//.s_config = m5moLS_s_config,	/* Fetch platform data */
 	.queryctrl = m5moLS_queryctrl,
 	.querymenu = m5moLS_querymenu,
 	.g_ctrl = m5moLS_g_ctrl,
@@ -5006,12 +5062,12 @@ static const struct v4l2_subdev_core_ops m5moLS_core_ops = {
 
 static const struct v4l2_subdev_video_ops m5moLS_video_ops = {
 	.s_crystal_freq = m5moLS_s_crystal_freq,
-	.g_fmt = m5moLS_g_fmt,
-	.s_fmt = m5moLS_s_fmt,
+	.g_mbus_fmt = m5moLS_g_fmt,
+	.s_mbus_fmt = m5moLS_s_fmt,
 	.enum_framesizes = m5moLS_enum_framesizes,
 	.enum_frameintervals = m5moLS_enum_frameintervals,
-	.enum_fmt = m5moLS_enum_fmt,
-	.try_fmt = m5moLS_try_fmt,
+	.enum_mbus_fmt = m5moLS_enum_fmt,
+	.try_mbus_fmt = m5moLS_try_fmt,
 	.g_parm = m5moLS_g_parm,
 	.s_parm = m5moLS_s_parm,
 };
@@ -5032,6 +5088,13 @@ static int m5moLS_probe(struct i2c_client *client,
 	printk("8MP camera M5MO_LS loaded.\n");
 	struct m5moLS_state *state;
 	struct v4l2_subdev *sd;
+	struct m5moLS_platform_data *pdata = client->dev.platform_data;
+	int ret = -ENODEV;
+	
+    if (!pdata) {
+        m5moLS_info(&client->dev, "%s: no platform data\n", __func__);
+        return -ENODEV;
+    }
 
 	state = kzalloc(sizeof(struct m5moLS_state), GFP_KERNEL);
 	if (state == NULL)
@@ -5045,6 +5108,42 @@ static int m5moLS_probe(struct i2c_client *client,
        
 	sd = &state->sd;
 	strcpy(sd->name, M5MO_LS_DRIVER_NAME);
+	
+    /*
+    * Assign default format and resolution
+    * Use configured default information in platform data
+    * or without them, use default information in driver
+    */
+    if (pdata->default_width && pdata->default_height) {
+        state->pix.width = pdata->default_width;
+        state->pix.height = pdata->default_height;
+    }
+
+    if (!pdata->pixelformat)
+        state->pix.pixelformat = DEFAULT_PIX_FMT;
+    else
+        state->pix.pixelformat = pdata->pixelformat;
+
+    if (!pdata->freq)
+        state->freq = DEFUALT_MCLK;	/* 24MHz default */
+    else
+        state->freq = pdata->freq;
+		
+    ret = m5moLS_enable_interrupt_pin(sd);
+
+
+    /* Check for interrupt pin assignment */
+    ret = request_irq(IRQ_M5MO_LS_CAM_MEGA_INT, m5moLS_irq_handler,IRQF_IRQPOLL,"m5moLS irq",NULL);
+    if (ret) {
+    	m5moLS_msg(&client->dev,"Failed to get IRQ\n");
+    	return ret;
+    }
+    else
+        m5moLS_msg(&client->dev,"M5MO_LS IRQ registered as %d\n", state->irq); 
+
+    if(ret<0){
+        m5moLS_msg(&client->dev, "failed to enable interrupt :::: ret = %d\n",ret);
+    }
 
 	/* Registering subdev */
 	v4l2_i2c_subdev_init(sd, client, &m5moLS_ops);
@@ -5077,12 +5176,25 @@ static const struct i2c_device_id m5moLS_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, m5moLS_id);
 
-static struct v4l2_i2c_driver_data v4l2_i2c_data = {
-	.name = M5MO_LS_DRIVER_NAME,
+static struct i2c_driver v4l2_i2c_driver = {
+	.driver.name = M5MO_LS_DRIVER_NAME,
 	.probe = m5moLS_probe,
 	.remove = m5moLS_remove,
 	.id_table = m5moLS_id,
 };
+
+static int __init v4l2_i2c_drv_init(void)
+{
+	return i2c_add_driver(&v4l2_i2c_driver);
+}
+
+static void __exit v4l2_i2c_drv_cleanup(void)
+{
+	i2c_del_driver(&v4l2_i2c_driver);
+}
+
+module_init(v4l2_i2c_drv_init);
+module_exit(v4l2_i2c_drv_cleanup);
 
 MODULE_DESCRIPTION("FUJITSU M5MO_LS-FUJITSU 8MP camera driver");
 MODULE_AUTHOR("Tushar Behera <tushar.b@samsung.com>");
