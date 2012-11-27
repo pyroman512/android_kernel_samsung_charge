@@ -17,7 +17,7 @@
 #include <linux/vmalloc.h>
 #include <media/v4l2-device.h>
 #include <media/v4l2-subdev.h>
-#include <media/v4l2-i2c-drv.h>
+//#include <media/v4l2-i2c-drv.h>
 #include <media/s5k5aafa_platform.h>
 #include <linux/regulator/consumer.h>
 #ifdef FEATURE_CAMERA_TUNING_MODE
@@ -1934,7 +1934,7 @@ static int s5k5aafa_init(struct v4l2_subdev *sd, u32 val)
  * it is not necessary to be initialized on probe time. except for version checking
  * NOTE: version checking is optional
  */
-static int s5k5aafa_s_config(struct v4l2_subdev *sd, int irq, void *platform_data)
+/*static int s5k5aafa_s_config(struct v4l2_subdev *sd, int irq, void *platform_data)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	struct s5k5aafa_state *state = to_state(sd);
@@ -1943,6 +1943,88 @@ static int s5k5aafa_s_config(struct v4l2_subdev *sd, int irq, void *platform_dat
 	dev_dbg(&client->dev, "fetching platform data\n");
 
 	pdata = client->dev.platform_data;
+
+	if (!pdata) {
+		dev_err(&client->dev, "%s: no platform data\n", __func__);
+		return -ENODEV;
+	}
+*/
+	/*
+	 * Assign default format and resolution
+	 * Use configured default information in platform data
+	 * or without them, use default information in driver
+	 */
+//	if (!(pdata->default_width && pdata->default_height)) {
+		/* TODO: assign driver default resolution */
+/*	} else {
+		state->pix.width = pdata->default_width;
+		state->pix.height = pdata->default_height;
+	}
+
+	if (!pdata->pixelformat)
+		state->pix.pixelformat = DEFAULT_FMT;
+	else
+		state->pix.pixelformat = pdata->pixelformat;
+
+	if (!pdata->freq)
+		state->freq = 24000000;	*//* 24MHz default */
+/*	else
+		state->freq = pdata->freq;
+
+	if (!pdata->is_mipi) {
+		state->is_mipi = 0;
+		dev_dbg(&client->dev, "parallel mode\n");
+	} else
+		state->is_mipi = pdata->is_mipi;
+
+	return 0;
+}*/
+
+static const struct v4l2_subdev_core_ops s5k5aafa_core_ops = {
+	.init = s5k5aafa_init,	/* initializing API */
+	//.s_config = s5k5aafa_s_config,	/* Fetch platform data */
+	.queryctrl = s5k5aafa_queryctrl,
+	.querymenu = s5k5aafa_querymenu,
+	.g_ctrl = s5k5aafa_g_ctrl,
+	.s_ctrl = s5k5aafa_s_ctrl,
+};
+
+static const struct v4l2_subdev_video_ops s5k5aafa_video_ops = {
+	.s_crystal_freq = s5k5aafa_s_crystal_freq,
+	.g_mbus_fmt = s5k5aafa_g_fmt,
+	.s_mbus_fmt = s5k5aafa_s_fmt,
+	.enum_framesizes = s5k5aafa_enum_framesizes,
+	.enum_frameintervals = s5k5aafa_enum_frameintervals,
+	.enum_mbus_fmt = s5k5aafa_enum_fmt,
+	.try_mbus_fmt = s5k5aafa_try_fmt,
+	.g_parm = s5k5aafa_g_parm,
+	.s_parm = s5k5aafa_s_parm,
+};
+
+static const struct v4l2_subdev_ops s5k5aafa_ops = {
+	.core = &s5k5aafa_core_ops,
+	.video = &s5k5aafa_video_ops,
+};
+
+/*
+ * s5k5aafa_probe
+ * Fetching platform data is being done with s_config subdev call.
+ * In probe routine, we just register subdev device
+ */
+static int s5k5aafa_probe(struct i2c_client *client,
+			 const struct i2c_device_id *id)
+{
+	struct s5k5aafa_state *state;
+	struct v4l2_subdev *sd;
+	struct s5k5aafa_platform_data *pdata = client->dev.platform_data;
+	int ret = -ENODEV;
+
+	state = kzalloc(sizeof(struct s5k5aafa_state), GFP_KERNEL);
+	if (state == NULL)
+		return -ENOMEM;
+
+	sd = &state->sd;
+	strcpy(sd->name, S5K5AAFA_DRIVER_NAME);
 
 	if (!pdata) {
 		dev_err(&client->dev, "%s: no platform data\n", __func__);
@@ -1977,53 +2059,6 @@ static int s5k5aafa_s_config(struct v4l2_subdev *sd, int irq, void *platform_dat
 	} else
 		state->is_mipi = pdata->is_mipi;
 
-	return 0;
-}
-
-static const struct v4l2_subdev_core_ops s5k5aafa_core_ops = {
-	.init = s5k5aafa_init,	/* initializing API */
-	.s_config = s5k5aafa_s_config,	/* Fetch platform data */
-	.queryctrl = s5k5aafa_queryctrl,
-	.querymenu = s5k5aafa_querymenu,
-	.g_ctrl = s5k5aafa_g_ctrl,
-	.s_ctrl = s5k5aafa_s_ctrl,
-};
-
-static const struct v4l2_subdev_video_ops s5k5aafa_video_ops = {
-	.s_crystal_freq = s5k5aafa_s_crystal_freq,
-	.g_fmt = s5k5aafa_g_fmt,
-	.s_fmt = s5k5aafa_s_fmt,
-	.enum_framesizes = s5k5aafa_enum_framesizes,
-	.enum_frameintervals = s5k5aafa_enum_frameintervals,
-	.enum_fmt = s5k5aafa_enum_fmt,
-	.try_fmt = s5k5aafa_try_fmt,
-	.g_parm = s5k5aafa_g_parm,
-	.s_parm = s5k5aafa_s_parm,
-};
-
-static const struct v4l2_subdev_ops s5k5aafa_ops = {
-	.core = &s5k5aafa_core_ops,
-	.video = &s5k5aafa_video_ops,
-};
-
-/*
- * s5k5aafa_probe
- * Fetching platform data is being done with s_config subdev call.
- * In probe routine, we just register subdev device
- */
-static int s5k5aafa_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
-{
-	struct s5k5aafa_state *state;
-	struct v4l2_subdev *sd;
-
-	state = kzalloc(sizeof(struct s5k5aafa_state), GFP_KERNEL);
-	if (state == NULL)
-		return -ENOMEM;
-
-	sd = &state->sd;
-	strcpy(sd->name, S5K5AAFA_DRIVER_NAME);
-
 	/* Registering subdev */
 	v4l2_i2c_subdev_init(sd, client, &s5k5aafa_ops);
 
@@ -2054,12 +2089,23 @@ static const struct i2c_device_id s5k5aafa_id[] = {
 };
 MODULE_DEVICE_TABLE(i2c, s5k5aafa_id);
 
-static struct v4l2_i2c_driver_data v4l2_i2c_data = {
-	.name = S5K5AAFA_DRIVER_NAME,
+static struct  i2c_driver v4l2_i2c_driver = {
+	.driver.name = S5K5AAFA_DRIVER_NAME,
 	.probe = s5k5aafa_probe,
 	.remove = s5k5aafa_remove,
 	.id_table = s5k5aafa_id,
 };
+
+
+static int __init v4l2_i2c_drv_init(void)
+{
+	return i2c_add_driver(&v4l2_i2c_driver);
+}
+
+static void __exit v4l2_i2c_drv_cleanup(void)
+{
+	i2c_del_driver(&v4l2_i2c_driver);
+}
 
 MODULE_DESCRIPTION("Samsung Electronics S5K5AAFA UXGA camera driver");
 MODULE_AUTHOR("Jinsung Yang <jsgood.yang@samsung.com>");

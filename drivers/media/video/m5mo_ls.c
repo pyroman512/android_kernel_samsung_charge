@@ -148,6 +148,11 @@ static int m5moLS_detect(struct v4l2_subdev *sd);
 static int m5moLS_set_vintage_mode(struct v4l2_subdev *sd);
 static int m5moLS_set_face_beauty(struct v4l2_subdev *sd);
 
+#define m5mo_writeb(sd, g, b, v)	m5mo_write(sd, 1, g, b, v)
+
+#define CHECK_ERR(x)	if ((x) < 0) { \
+				return x; \
+			}
 
 enum m5moLS_frame_size {
 	M5MO_LS_PREVIEW_QCIF = 0,
@@ -384,14 +389,11 @@ struct m5moLS_state {
 	struct work_struct m5moLS_firmdump_work;    
 };
 
-const static struct v4l2_fmtdesc capture_fmts[] = {
-        {
-                .index          = 0,
-                .type           = V4L2_BUF_TYPE_VIDEO_CAPTURE,
-                .flags          = FORMAT_FLAGS_COMPRESSED,
-                .description    = "JPEG + Postview",
-                .pixelformat    = V4L2_PIX_FMT_JPEG,
-        },
+static const struct v4l2_mbus_framefmt capture_fmts[] = {
+	{
+		.code		= V4L2_MBUS_FMT_FIXED,
+		.colorspace	= V4L2_COLORSPACE_JPEG,
+	},
 };
 
 static inline struct m5moLS_state *to_state(struct v4l2_subdev *sd)
@@ -505,7 +507,7 @@ static int
 m5moLS_read_category_parm(struct i2c_client *client, 
 								u8 data_length, u8 category, u8 byte, u32* val)
 {
-	struct i2c_msg msg[1];
+	struct i2c_msg msg;
 	unsigned char data[5];
 	unsigned char recv_data[data_length + 1];
 	int err, retry=0;
@@ -517,10 +519,10 @@ m5moLS_read_category_parm(struct i2c_client *client,
 
 
 read_again:
-	msg->addr = client->addr;
-	msg->flags = 0;
-	msg->len = 5;
-	msg->buf = data;
+	msg.addr = client->addr;
+	msg.flags = 0;
+	msg.len = 5;
+	msg.buf = data;
 
 	/* high byte goes out first */
 	data[0] = 0x05;
@@ -529,14 +531,14 @@ read_again:
 	data[3] = byte;
 	data[4] = data_length;
 	
-	err = i2c_transfer(client->adapter, msg, 1);
+	err = i2c_transfer(client->adapter, &msg, 1);
 	if (err >= 0) 
 	{
-		msg->flags = I2C_M_RD;
-		msg->len = data_length + 1;
-		msg->buf = recv_data; 
+		msg.flags = I2C_M_RD;
+		msg.len = data_length + 1;
+		msg.buf = recv_data; 
 		
-		err = i2c_transfer(client->adapter, msg, 1);
+		err = i2c_transfer(client->adapter, &msg, 1);
 	}
 	if (err >= 0) 
 	{
@@ -571,7 +573,7 @@ static int
 m5moLS_write_category_parm(struct i2c_client *client,  
 										u8 data_length, u8 category, u8 byte, u32 val)
 {
-	struct i2c_msg msg[1];
+	struct i2c_msg msg;
 	unsigned char data[data_length+4];
 	int retry = 0, err;
 
@@ -581,48 +583,102 @@ m5moLS_write_category_parm(struct i2c_client *client,
 	if (data_length != M5MO_LS_8BIT && data_length != M5MO_LS_16BIT && data_length != M5MO_LS_32BIT)
 		return -EINVAL; 
 
-again:
-	m5moLS_msg(&client->dev, "write value from [category:0x%x], [Byte:0x%x] is value:0x%x\n", category, byte, val);
+	dev_err(&client->dev, "write value from [category:0x%x], [Byte:0x%x] is value:0x%x\n", category, byte, val);
 	//print_currenttime();
-	m5moLS_msg(&client->dev, "write value from [address:0x%x]\n", client->addr);
-	msg->addr = client->addr;
-	msg->flags = 0;
-	msg->len = data_length + 4;
-	msg->buf = data;
+	dev_err(&client->dev, "write value from [address:0x%x]\n", client->addr);
+	msg.addr = client->addr;
+	msg.flags = 0;
+	msg.len = sizeof(data);
+	msg.buf = data;
 
 	/* high byte goes out first */
-	data[0] = data_length + 4;
+	data[0] = msg.len;
 	data[1] = 0x02;
 	data[2] = category;
 	data[3] = byte;
-	if (data_length == M5MO_LS_8BIT)
-		data[4] = (u8) (val & 0xff);
-	else if (data_length == M5MO_LS_16BIT) 
-	{
-		data[4] = (u8) (val >> 8);
-		data[5] = (u8) (val & 0xff);
-	} 
-	else 
-	{
-		data[4] = (u8) (val >> 24);
-		data[5] = (u8) ( (val >> 16) & 0xff );
-		data[6] = (u8) ( (val >> 8) & 0xff );
-		data[7] = (u8) (val & 0xff);
+	if (data_length == 0x01) {
+		data[4] = val & 0xFF;
+	} else if (data_length == 0x02) {
+		data[4] = (val >> 8) & 0xFF;
+		data[5] = val & 0xFF;
+	} else {
+		data[4] = (val >> 24) & 0xFF;
+		data[5] = (val >> 16) & 0xFF;
+		data[6] = (val >> 8) & 0xFF;
+		data[7] = val & 0xFF;
 	}
 	
-	err = i2c_transfer(client->adapter, msg, 1);
-	if (err >= 0)
-		return 0;
+//	err = i2c_transfer(client->adapter, &msg, 1);
+	//if (err >= 0)
+		//return 0;
 
-	m5moLS_msg(&client->dev,"wrote 0x%x to offset [category:0x%x], [Byte:0x%x] error %d", val, category, byte, err);
-	if (retry <= M5MO_LS_I2C_RETRY) 
+	dev_err(&client->dev,"wrote 0x%x to offset [category:0x%x], [Byte:0x%x] error %d", val, category, byte, err);
+	
+	for (retry = M5MO_LS_I2C_RETRY; retry; retry--) {
+		dev_err(&client->dev,"retry %x\n", retry);
+		err = i2c_transfer(client->adapter, &msg, 1);
+		if (err == 1)
+			break;
+		msleep(20);
+	}
+	dev_err(&client->dev,"Returning err= %x\n", err);
+	return err;
+	
+/*	if (retry <= M5MO_LS_I2C_RETRY) 
 	{
-		m5moLS_msg(&client->dev,"retry ... %d", retry);
+		dev_err(&client->dev,"retry ... %d", retry);
 		retry++;
 		set_current_state(TASK_UNINTERRUPTIBLE);
 		schedule_timeout(msecs_to_jiffies(20));
 		goto again;
 	}
+	return err;*/
+}
+
+static int m5mo_write(struct v4l2_subdev *sd,
+	u8 len, u8 category, u8 byte, int val)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct i2c_msg msg;
+	unsigned char data[len + 4];
+	int i, err;
+	
+	if (!client->adapter)
+		return -ENODEV;
+
+	if (len != 0x01 && len != 0x02 && len != 0x04)
+		return -EINVAL;
+
+	msg.addr = client->addr;
+	msg.flags = 0;
+	msg.len = sizeof(data);
+	msg.buf = data;
+
+	data[0] = msg.len;
+	data[1] = 0x02;			/* Write category parameters */
+	data[2] = category;
+	data[3] = byte;
+	if (len == 0x01) {
+		data[4] = val & 0xFF;
+	} else if (len == 0x02) {
+		data[4] = (val >> 8) & 0xFF;
+		data[5] = val & 0xFF;
+	} else {
+		data[4] = (val >> 24) & 0xFF;
+		data[5] = (val >> 16) & 0xFF;
+		data[6] = (val >> 8) & 0xFF;
+		data[7] = val & 0xFF;
+	}
+
+		for (i = M5MO_LS_I2C_RETRY; i; i--) {
+		  dev_err(&client->dev,"wrote 0x0%x to offset [category:0x%x], [Byte:0x%x] error %d", val, category, byte, err);
+		  dev_err(&client->dev,"retry ... %d", i);
+		  err = i2c_transfer(client->adapter, &msg, 1);
+		  if (err == 1)
+			break;
+		  msleep(20);
+	}
+
 	return err;
 }
 
@@ -3026,7 +3082,21 @@ static int m5moLS_set_white_balance(struct v4l2_subdev *sd, struct v4l2_control 
 
 static int m5moLS_set_ev(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
-    int err = -1;
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct v4l2_queryctrl qc = {0,};
+	int val = ctrl->value, err;
+	u32 exposure[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+	
+	 m5moLS_msg(&client->dev, "%s: Enter : brightness = %d\n", __func__, val);
+
+	err = m5mo_writeb(sd, 0x03,
+		0x38, exposure[val]);
+	CHECK_ERR(err);
+
+	return 0;
+}
+
+/*    int err = -1;
     struct i2c_client *client = v4l2_get_subdevdata(sd);
     struct m5moLS_state *state = to_state(sd);
 
@@ -3083,7 +3153,7 @@ static int m5moLS_set_ev(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
         m5moLS_info(&client->dev,"%s ::: failed\n",__func__);
 
     return err;
-}
+}*/
 
 
 
@@ -3127,46 +3197,58 @@ static int m5moLS_set_metering(struct v4l2_subdev *sd, struct v4l2_control *ctrl
     return err;
 }
 
-static int m5moLS_set_iso(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
+/*static int m5moLS_set_iso(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
 	int err = -1;
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
        struct m5moLS_state *state = to_state(sd);
 
 
-	m5moLS_msg(&client->dev, "%s: Enter : iso %d\n", __func__, ctrl->value);
+	dev_err(&client->dev, "%s: Enter : iso %d\n", __func__, ctrl->value);
        
 	switch(ctrl->value)
 	{
 		case ISO_AUTO:
 			err = m5moLS_write_category_parm(client, M5MO_LS_8BIT, 0x03, 0x05, 0x00);
+			dev_err(&client->dev, "%s: done, iso: ISO_AUTO\n", __func__);
 	        	break;
 
 		case ISO_50:
 			err = m5moLS_write_category_parm(client, M5MO_LS_8BIT, 0x03, 0x05, 0x01);
+			dev_err(&client->dev, "%s: done, iso: ISO_50\n", __func__);
 	    		break;
 
 		case ISO_100:
 			err = m5moLS_write_category_parm(client, M5MO_LS_8BIT, 0x03, 0x05, 0x02);
+			dev_err(&client->dev, "%s: done, iso: ISO_100\n", __func__);
 	    		break;
 
 		case ISO_200:
 			err = m5moLS_write_category_parm(client, M5MO_LS_8BIT, 0x03, 0x05, 0x03);
+			dev_err(&client->dev, "%s: done, iso: ISO_200\n", __func__);
 	    		break;
 
 		case ISO_400:
 			err = m5moLS_write_category_parm(client, M5MO_LS_8BIT, 0x03, 0x05, 0x04);
+			dev_err(&client->dev, "%s: done, iso: ISO_400\n", __func__);
 	    		break;
 
 		case ISO_800:
 			err = m5moLS_write_category_parm(client, M5MO_LS_8BIT, 0x03, 0x05, 0x05);
+			dev_err(&client->dev, "%s: done, iso: ISO_800\n", __func__);
 	    		break;
 
-		/* sunggeun : temp */
 		case ISO_SPORTS:
+			err = m5moLS_write_category_parm(client, M5MO_LS_8BIT, 0x03, 0x05, 0x00);
+			dev_err(&client->dev, "%s: done, iso: ISO_SPORTS\n", __func__);
+			break;
 		case ISO_NIGHT:
+			err = m5moLS_write_category_parm(client, M5MO_LS_8BIT, 0x03, 0x05, 0x00);
+			dev_err(&client->dev, "%s: done, iso: ISO_NIGHT\n", __func__);
+			break;		
 		case ISO_MOVIE:
-			err = m5moLS_write_category_parm(client, M5MO_LS_8BIT, 0x03, 0x05, 0x00);;
+			err = m5moLS_write_category_parm(client, M5MO_LS_8BIT, 0x03, 0x05, 0x00);
+			dev_err(&client->dev, "%s: done, iso: ISO_MOVIE\n", __func__);
 			break;
 			
 		default:
@@ -3176,12 +3258,26 @@ static int m5moLS_set_iso(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 	}
 
     if(err == 0){
-    	m5moLS_msg(&client->dev, "%s: done, iso: 0x%02x\n", __func__, ctrl->value);
+    	dev_err(&client->dev, "%s: done, iso: 0x%02x\n", __func__, ctrl->value);
     }
     else
-        m5moLS_info(&client->dev,"%s ::: failed\n",__func__);
+        dev_err(&client->dev,"%s ::: failed\n",__func__);
 
 	return err;
+}*/
+static int m5moLS_set_iso(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
+{
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct v4l2_queryctrl qc = {0,};
+	int val = ctrl->value, err;
+	u32 iso[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
+	
+	dev_err(&client->dev, "%s: Enter : iso 0x0%d\n", __func__, val);
+
+	err = m5mo_writeb(sd, 0x03, 0x05, iso[val]);
+	CHECK_ERR(err);
+	
+	return 0;
 }
 
 static int m5moLS_set_gamma(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
@@ -3194,6 +3290,15 @@ static int m5moLS_set_gamma(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 static int m5moLS_set_slow_ae(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
 	/*[5b] Need to do later*/
+	return 0;
+}
+
+static int m5moLS_finish_auto_focus(struct v4l2_subdev *sd)
+{
+	int err;
+	struct m5moLS_state *state = to_state(sd);
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	state->userset.lens.af_status = 0;
 	return 0;
 }
 
@@ -3289,6 +3394,7 @@ static int m5moLS_get_auto_focus_status(struct v4l2_subdev *sd, struct v4l2_cont
 		m5moLS_info(&client->dev,
 			"%s: AF is cancelled while doing\n", __func__);
 		ctrl->value = M5MO_LS_AF_STATUS_CANCEL;
+		m5moLS_finish_auto_focus(sd);
 		return M5MO_LS_AF_STATUS_CANCEL;
 	}
 
@@ -3403,18 +3509,49 @@ static const char *m5moLS_querymenu_wb_preset[] = {
 #endif
 
 static struct v4l2_queryctrl m5moLS_controls[] = {
-#if 0
-	/* Sample code */
 	{
-		.id = V4L2_CID_WHITE_BALANCE_PRESET,
-		.type = V4L2_CTRL_TYPE_MENU,
-		.name = "White balance preset",
-		.minimum = 0,
-		.maximum = ARRAY_SIZE(m5moLS_querymenu_wb_preset) - 2,
+		.id = V4L2_CID_CAMERA_ISO,
+		.minimum = ISO_AUTO,
+		.maximum = ISO_800,
 		.step = 1,
-		.default_value = 0,
+		.default_value = ISO_AUTO,
+	}, {
+		.id = V4L2_CID_CAMERA_BRIGHTNESS,
+		.minimum = EV_MINUS_4,
+		.maximum = EV_MAX - 1,
+		.step = 1,
+		.default_value = EV_DEFAULT,
+	}, {
+		.id = V4L2_CID_CAMERA_SATURATION,
+		.minimum = SATURATION_MINUS_2,
+		.maximum = SATURATION_MAX - 1,
+		.step = 1,
+		.default_value = SATURATION_DEFAULT,
+	}, {
+		.id = V4L2_CID_CAMERA_SHARPNESS,
+		.minimum = SHARPNESS_MINUS_2,
+		.maximum = SHARPNESS_MAX - 1,
+		.step = 1,
+		.default_value = SHARPNESS_DEFAULT,
+	}, {
+		.id = V4L2_CID_CAMERA_ZOOM,
+		.minimum = ZOOM_LEVEL_0,
+		.maximum = ZOOM_LEVEL_MAX - 1,
+		.step = 1,
+		.default_value = ZOOM_LEVEL_0,
+	}, {
+		.id = V4L2_CID_CAM_JPEG_QUALITY,
+		.minimum = 1,
+		.maximum = 100,
+		.step = 1,
+		.default_value = 100,
+	}, {
+		.id = V4L2_CID_CAMERA_ANTI_BANDING,
+		.minimum = ANTI_BANDING_AUTO,
+		.maximum = ANTI_BANDING_OFF,
+		.step = 1,
+		.default_value = ANTI_BANDING_50HZ,
 	},
-#endif
 };
 
 static int m5moLS_enable_interrupt_pin(struct v4l2_subdev *sd)
@@ -3475,10 +3612,10 @@ static inline struct v4l2_queryctrl const *m5moLS_find_qctrl(int id)
 	return NULL;
 }
 
-static int m5moLS_queryctrl(struct v4l2_subdev *sd, struct v4l2_queryctrl *qc)
-{
+int m5moLS_queryctrl(struct v4l2_subdev *sd, struct v4l2_queryctrl *qc)
+{	
 	int i;
-         struct i2c_client *client = v4l2_get_subdevdata(sd);
+     struct i2c_client *client = v4l2_get_subdevdata(sd);
 	dev_err(&client->dev, "%s\n", __func__);
 
 	for (i = 0; i < ARRAY_SIZE(m5moLS_controls); i++) {
@@ -3517,7 +3654,7 @@ static int m5moLS_s_crystal_freq(struct v4l2_subdev *sd, u32 freq, u32 flags)
 	return err;
 }
 
-static int m5moLS_g_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
+static int m5moLS_g_fmt(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *fmt)
 {
 	int err = 0;
 
@@ -3531,7 +3668,7 @@ static int m5moLS_set_framesize_index(struct v4l2_subdev *sd, unsigned int index
  * pixel_format -> to be handled in the upper layer 
  *
  * */
-static int m5moLS_s_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
+static int m5moLS_s_fmt(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *fmt)
 {
 	int err = 0;
 	struct m5moLS_state *state = to_state(sd);
@@ -3540,24 +3677,28 @@ static int m5moLS_s_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
 
 	dev_err(&client->dev, "%s\n", __func__);
 
-	if(fmt->fmt.pix.pixelformat == V4L2_PIX_FMT_JPEG && fmt->fmt.pix.colorspace != V4L2_COLORSPACE_JPEG){
+	if (fmt->code == V4L2_MBUS_FMT_FIXED &&
+		fmt->colorspace != V4L2_COLORSPACE_JPEG) {
 		dev_err(&client->dev, "%s: mismatch in pixelformat and colorspace\n", __func__);
 		return -EINVAL;
 	}
 
-	if(fmt->fmt.pix.width == 800 && fmt->fmt.pix.height == 448) {
+	if(fmt->width == 800 && fmt->height == 448) {
 		state->pix.width = 1280;
 		state->pix.height = 720;
 	}
 
 	else {
-		state->pix.width = fmt->fmt.pix.width;
-		state->pix.height = fmt->fmt.pix.height;
+		state->pix.width = fmt->width;
+		state->pix.height = fmt->height;
 	}
 	
-	state->pix.pixelformat = fmt->fmt.pix.pixelformat;
+	if (fmt->colorspace == V4L2_COLORSPACE_JPEG)
+		state->pix.pixelformat = V4L2_PIX_FMT_JPEG;
+	else
+		state->pix.pixelformat = 0; /* is this used anywhere? */
 
-	if(fmt->fmt.pix.colorspace == V4L2_COLORSPACE_JPEG)
+	if(fmt->colorspace == V4L2_COLORSPACE_JPEG)
 		state->oprmode = M5MO_LS_OPRMODE_IMAGE;
 	else
 		state->oprmode = M5MO_LS_OPRMODE_VIDEO; 
@@ -3569,7 +3710,7 @@ static int m5moLS_s_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
        if(framesize_index < M5MO_LS_PREVIEW_QCIF || framesize_index >  M5MO_LS_CAPTURE_8MP)
        {
             m5moLS_info(&client->dev,"framesize_index value is invalid : %d\n",framesize_index);
-            if(fmt->fmt.pix.colorspace == V4L2_COLORSPACE_JPEG)
+            if(fmt->colorspace == V4L2_COLORSPACE_JPEG)
                 framesize_index = M5MO_LS_CAPTURE_8MP;
        
        }
@@ -3647,34 +3788,38 @@ static int m5moLS_enum_frameintervals(struct v4l2_subdev *sd,
 	return err;
 }
 
-static int m5moLS_enum_fmt(struct v4l2_subdev *sd, struct v4l2_fmtdesc *fmtdesc)
+static int m5moLS_enum_fmt(struct v4l2_subdev *sd, unsigned int index,
+				  enum v4l2_mbus_pixelcode *code)
 {
 	int num_entries;
          struct i2c_client *client = v4l2_get_subdevdata(sd);
 
-	num_entries = sizeof(capture_fmts)/sizeof(struct v4l2_fmtdesc);
+	num_entries = sizeof(capture_fmts)/sizeof(struct v4l2_mbus_framefmt);
     
 	dev_err(&client->dev, "%s\n", __func__);
 
-	if(fmtdesc->index >= num_entries)
+	if(index >= num_entries)
 		return -EINVAL;
 
-        memset(fmtdesc, 0, sizeof(*fmtdesc));
-        memcpy(fmtdesc, &capture_fmts[fmtdesc->index], sizeof(*fmtdesc));
+	 *code = capture_fmts[index].code;
+        //memset(fmtdesc, 0, sizeof(*fmtdesc));
+       // memcpy(fmtdesc, &capture_fmts[fmtdesc->index], sizeof(*fmtdesc));
 
 	return 0;
 }
 
-static int m5moLS_try_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
+static int m5moLS_try_fmt(struct v4l2_subdev *sd, struct v4l2_mbus_framefmt *fmt)
 {
 	int num_entries;
 	int i;
 
-	num_entries = sizeof(capture_fmts)/sizeof(struct v4l2_fmtdesc);
+	num_entries = sizeof(capture_fmts)/sizeof(struct v4l2_mbus_framefmt);
 
 	for(i = 0; i < num_entries; i++){
-		if(capture_fmts[i].pixelformat == fmt->fmt.pix.pixelformat)
+		if(capture_fmts[i].code == fmt->code &&
+		    capture_fmts[i].colorspace == fmt->colorspace) {
 			return 0;
+		}
 	} 
 
 	return -EINVAL;
@@ -4208,9 +4353,9 @@ static int m5moLS_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
     struct i2c_client *client = v4l2_get_subdevdata(sd);
     struct m5moLS_state *state = to_state(sd);
-    int err = -ENOIOCTLCMD;
-    //int offset = V4L2_CID_PRIVATE_BASE;
-	int offset = 134217728;
+    //int err = -ENOIOCTLCMD;
+	int err = 0;
+    int offset = V4L2_CID_PRIVATE_BASE;
 	
     m5moLS_msg(&client->dev, "%s :::: ctrl->id=%d, ctrl->value = %d \n", __func__,(ctrl->id - offset),ctrl->value);
 
@@ -4419,6 +4564,9 @@ static int m5moLS_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 			state->hd_slow_ae = ctrl->value;
 			err = 0;
 			break;
+	case V4L2_CID_CAMERA_FINISH_AUTO_FOCUS:
+		err = m5moLS_finish_auto_focus(sd);
+		break;
            
         default:
             dev_err(&client->dev, "%s: no such control:::: s_ctrl:id(%d)\n", __func__, (ctrl->id - offset));
